@@ -15,6 +15,7 @@ bitflags! {
         const DOWN = 1 << 6;
         const LEFT = 1 << 7;
         const RIGHT = 1 << 8;
+        const MOUSE = 1 << 16;
     }
 }
 
@@ -30,6 +31,11 @@ pub struct FirstPersonCamera {
 
     state: Movement,
     handlers: Vec<(Movement, String, Box<Fn(&mut FirstPersonCamera, f64)>)>,
+    mouse_pos:  Vector2<i32>,
+    mouse_angle_speed: f32,
+
+    clicked: bool,
+    click_pos:  Vector2<i32>,
 }
 
 impl Processor for FirstPersonCamera {
@@ -44,6 +50,10 @@ impl Processor for FirstPersonCamera {
             camera: None,
             eye: Vector3::new(0.0, 0.0, -3.0),
             eye_dir: Vector3::new(0.0, 0.0, 1.0).normalize(),
+            mouse_pos: Vector2::new(0,0),
+            mouse_angle_speed: 0.00001,
+            clicked: false,
+            click_pos: Vector2::new(0,0),
         };
 
         let up = Vector3::unit_y();
@@ -69,10 +79,49 @@ impl Processor for FirstPersonCamera {
         m.add(Movement::LEFT, "KeyZ", move |s, dt| {
             let right = s.eye_dir.cross(up).normalize();
             s.eye = s.eye - right * s.speed * dt as f32;
-        });
+        });a
         m.add(Movement::RIGHT, "KeyX", move |s, dt| {
             let right = s.eye_dir.cross(up).normalize();
             s.eye = s.eye + right * s.speed * dt as f32;
+        });
+        m.add(Movement::MOUSE, "", move |s, dt| {
+
+            let delta = s.mouse_pos - s.click_pos;
+
+
+
+/*
+moveLookLocked
+            if(angles.x < -M_PI)
+            angles.x += M_PI * 2;
+            else if(angles.x > M_PI)
+            angles.x -= M_PI * 2;
+
+            if(angles.y < -M_PI / 2)
+            angles.y = -M_PI / 2;
+            if(angles.y > M_PI / 2)
+            angles.y = M_PI / 2;
+            glm::vec3 lookat;
+            lookat.x = sinf(angles.x) * cosf(angles.y);
+            lookat.y = sinf(angles.y);
+            lookat.z = cosf(angles.x) * cosf(angles.y);
+
+            zAngle += xDelta*0.0025;
+            while (zAngle < 0)
+            zAngle += Math.PI*2;
+            while (zAngle >= Math.PI*2)
+            zAngle -= Math.PI*2;
+
+            if (!isVRPresenting()) {
+                xAngle += yDelta*0.0025;
+                while (xAngle < -Math.PI*0.5)
+                xAngle = -Math.PI*0.5;
+                while (xAngle > Math.PI*0.5)
+                xAngle = Math.PI*0.5;
+            }
+ */
+
+
         });
         m
     }
@@ -158,6 +207,29 @@ impl FirstPersonCamera {
         }
     }
 
+    fn mouse_down(&mut self, input: usize) {
+        if input == 0 && !self.clicked  {
+            self.clicked = true;
+            self.click_pos = self.mouse_pos.clone();
+        }
+    }
+
+    fn mouse_up(&mut self, input: usize) {
+        if input == 0 && self.clicked  {
+            self.clicked = false;
+        }
+    }
+
+    fn mouse_pos(&mut self, input: &(i32,i32)) {
+        self.mouse_pos = Vector2::new(input.0,input.1);
+
+        if self.clicked {
+            self.state.insert(Movement::MOUSE);
+        }else {
+            self.state.remove(Movement::MOUSE);
+        }
+    }
+
     fn handle_event(&mut self, evt: &AppEvent) {
         match evt {
             &AppEvent::KeyUp(ref key) => {
@@ -166,6 +238,18 @@ impl FirstPersonCamera {
 
             &AppEvent::KeyDown(ref key) => {
                 self.key_down(key.code.as_str());
+            }
+
+            &AppEvent::MouseDown(ref button_event) => {
+                self.mouse_down(button_event.button);
+            }
+
+            &AppEvent::MouseUp(ref button_event) => {
+                self.mouse_up(button_event.button);
+            }
+
+            &AppEvent::MousePos(ref pos_tuple) => {
+                self.mouse_pos(pos_tuple);
             }
 
             _ => {}

@@ -127,5 +127,5 @@ pub enum AppEvent {
     KeyDown(KeyDownEvent),
     KeyUp(KeyUpEvent),
     Resized((u32, u32)),
-    MousePos((f64, f64)),
+    MousePos((i32, i32)),
 }

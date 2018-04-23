@@ -157,11 +157,11 @@ impl App {
 
         canvas.add_event_listener({
             let canvas = canvas.clone();
-            let canvas_x: f64 = js! {
+            let canvas_x: i32 = js! {
             return @{&canvas}.getBoundingClientRect().left; }
                 .try_into()
                 .unwrap();
-            let canvas_y: f64 = js! {
+            let canvas_y: i32 = js! {
             return @{&canvas}.getBoundingClientRect().top; }
                 .try_into()
                 .unwrap();
@@ -170,7 +170,7 @@ impl App {
                 MouseMoveEvent,
                 MousePos,
                 e,
-                (e.client_x() as f64 - canvas_x,e.client_y() as f64 - canvas_y),
+                (e.client_x() - canvas_x,e.client_y() - canvas_y),
                 true
             }
         });
