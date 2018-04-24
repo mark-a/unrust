@@ -51,7 +51,7 @@ impl Processor for FirstPersonCamera {
             eye: Vector3::new(0.0, 0.0, -3.0),
             eye_dir: Vector3::new(0.0, 0.0, 1.0).normalize(),
             mouse_pos: Vector2::new(0,0),
-            mouse_angle_speed: 0.00001,
+            mouse_angle_speed: 2.0,
             clicked: false,
             click_pos: Vector2::new(0,0),
         };
@@ -79,7 +79,7 @@ impl Processor for FirstPersonCamera {
         m.add(Movement::LEFT, "KeyZ", move |s, dt| {
             let right = s.eye_dir.cross(up).normalize();
             s.eye = s.eye - right * s.speed * dt as f32;
-        });a
+        });
         m.add(Movement::RIGHT, "KeyX", move |s, dt| {
             let right = s.eye_dir.cross(up).normalize();
             s.eye = s.eye + right * s.speed * dt as f32;
@@ -88,40 +88,12 @@ impl Processor for FirstPersonCamera {
 
             let delta = s.mouse_pos - s.click_pos;
 
+            let angle_x = Rad( delta.x as f32 / 600 as f32 * dt as f32 * s.mouse_angle_speed);
+            let angle_y = Rad( delta.y as f32 / 800 as f32 * dt as f32 * s.mouse_angle_speed);
 
-
-/*
-moveLookLocked
-            if(angles.x < -M_PI)
-            angles.x += M_PI * 2;
-            else if(angles.x > M_PI)
-            angles.x -= M_PI * 2;
-
-            if(angles.y < -M_PI / 2)
-            angles.y = -M_PI / 2;
-            if(angles.y > M_PI / 2)
-            angles.y = M_PI / 2;
-            glm::vec3 lookat;
-            lookat.x = sinf(angles.x) * cosf(angles.y);
-            lookat.y = sinf(angles.y);
-            lookat.z = cosf(angles.x) * cosf(angles.y);
-
-            zAngle += xDelta*0.0025;
-            while (zAngle < 0)
-            zAngle += Math.PI*2;
-            while (zAngle >= Math.PI*2)
-            zAngle -= Math.PI*2;
-
-            if (!isVRPresenting()) {
-                xAngle += yDelta*0.0025;
-                while (xAngle < -Math.PI*0.5)
-                xAngle = -Math.PI*0.5;
-                while (xAngle > Math.PI*0.5)
-                xAngle = Math.PI*0.5;
-            }
- */
-
-
+            let translation =  Quaternion::from_angle_z( -angle_y )*
+                               Quaternion::from_angle_y( angle_x );
+            s.eye_dir = translation * s.eye_dir;
         });
         m
     }
