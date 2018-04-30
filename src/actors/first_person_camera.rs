@@ -88,8 +88,8 @@ impl Processor for FirstPersonCamera {
         m.add(Movement::MOUSE, "", move |s, dt| {
 
             let delta = s.mouse_pos - s.click_pos;
-            let yaw:f32 =  delta.x as f32  * s.mouse_sensitivity;
-            let mut pitch:f32 =  - delta.y as f32 * s.mouse_sensitivity;
+            let yaw:f32 = - delta.x as f32  * s.mouse_sensitivity;
+            let mut pitch:f32 =   delta.y as f32 * s.mouse_sensitivity;
 
             if pitch > 89.0 {
                 pitch =  89.0;
