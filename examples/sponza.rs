@@ -125,8 +125,8 @@ impl Actor for MainScene {
         fpc.camera().borrow_mut().znear = 1.0;
         fpc.camera().borrow_mut().zfar = 10000.0;
 
-        fpc.eye = Vector3::new(0.0, 200.06, -3.36);
-        fpc.eye_dir = Vector3::new(-3.0, 0.0, -1.0).normalize();
+        fpc.position = Vector3::new(0.0, 200.06, -3.36);
+        fpc.direction = Vector3::new(-3.0, 0.0, -1.0).normalize();
         fpc.speed = 200.0;
 
         {
@@ -227,8 +227,8 @@ impl Actor for MainScene {
         imgui::label(
             Native(1.0, 0.0) + Pixel(-8.0, 8.0),
             &format!(
-                "last event: {:?}\nnormal_map = {:?}\nlight animation={:?}\neye={:?}",
-                self.last_event, normap_map_enabled, self.animate_light, fpc.eye
+                "last event: {:?}\nnormal_map = {:?}\nlight animation={:?}\nposition={:?}\ndirection={:?}",
+                self.last_event, normap_map_enabled, self.animate_light, fpc.position,fpc.direction
             ),
         );
 

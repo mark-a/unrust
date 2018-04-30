@@ -3,6 +3,7 @@ use uni_app::AppEvent;
 use world::{Actor, Processor, World};
 
 use math::*;
+use std::f32::consts::PI;
 use std::sync::Arc;
 
 bitflags! {
@@ -24,8 +25,8 @@ pub struct FirstPersonCamera {
     pub speed: f32,
     pub angle_speed: f32,
 
-    pub eye: Vector3<f32>,
-    pub eye_dir: Vector3<f32>,
+    pub position: Vector3<f32>,
+    pub direction: Vector3<f32>,
 
     camera: Option<Arc<Component>>,
 
@@ -48,10 +49,10 @@ impl Processor for FirstPersonCamera {
             state: Movement::empty(),
             handlers: Vec::new(),
             camera: None,
-            eye: Vector3::new(0.0, 0.0, -3.0),
-            eye_dir: Vector3::new(0.0, 0.0, 1.0).normalize(),
+            position: Vector3::new(0.0, 0.0, -3.0),
+            direction: Vector3::new(0.0, 0.0, 1.0),
             mouse_pos: Vector2::new(0,0),
-            mouse_angle_speed: 2.0,
+            mouse_angle_speed: 1.8,
             clicked: false,
             click_pos: Vector2::new(0,0),
         };
@@ -59,45 +60,59 @@ impl Processor for FirstPersonCamera {
         let up = Vector3::unit_y();
 
         m.add(Movement::TURN_LEFT, "KeyA", move |s, dt| {
-            s.eye_dir = Quaternion::from_angle_y(Rad(s.angle_speed * dt as f32)) * s.eye_dir;
+            s.direction = Quaternion::from_angle_y(Rad(s.angle_speed * dt as f32)) * s.direction;
         });
         m.add(Movement::TURN_RIGHT, "KeyD", move |s, dt| {
-            s.eye_dir = Quaternion::from_angle_y(Rad(-s.angle_speed * dt as f32)) * s.eye_dir
+            s.direction = Quaternion::from_angle_y(Rad(-s.angle_speed * dt as f32)) * s.direction
         });
-        m.add(Movement::UP, "KeyE", move |s, dt| {
-            s.eye = s.eye + up * s.speed * dt as f32;
+        m.add(Movement::UP, "Kposition", move |s, dt| {
+            s.position = s.position + up * s.speed * dt as f32;
         });
         m.add(Movement::DOWN, "KeyC", move |s, dt| {
-            s.eye = s.eye + up * -s.speed * dt as f32;
+            s.position = s.position + up * -s.speed * dt as f32;
         });
         m.add(Movement::FORWARD, "KeyW", move |s, dt| {
-            s.eye = s.eye + s.eye_dir * s.speed * dt as f32;
+            s.position = s.position + s.direction * s.speed * dt as f32;
         });
         m.add(Movement::BACKWARD, "KeyS", move |s, dt| {
-            s.eye = s.eye + s.eye_dir * -s.speed * dt as f32;
+            s.position = s.position + s.direction * -s.speed * dt as f32;
         });
         m.add(Movement::LEFT, "KeyZ", move |s, dt| {
-            let right = s.eye_dir.cross(up).normalize();
-            s.eye = s.eye - right * s.speed * dt as f32;
+            let right = s.direction.cross(up).normalize();
+            s.position = s.position - right * s.speed * dt as f32;
         });
         m.add(Movement::RIGHT, "KeyX", move |s, dt| {
-            let right = s.eye_dir.cross(up).normalize();
-            s.eye = s.eye + right * s.speed * dt as f32;
+            let right = s.direction.cross(up).normalize();
+            s.position = s.position + right * s.speed * dt as f32;
         });
         m.add(Movement::MOUSE, "", move |s, dt| {
 
             let delta = s.mouse_pos - s.click_pos;
+            let pi_div_180 = PI / 180.0;
+            let angle_x :f32=  delta.x as f32 / 600 as f32 * s.mouse_angle_speed;
+            let angle_y :f32=  delta.y as f32 / 800 as f32 * s.mouse_angle_speed;
 
-            let angle_x = Rad( delta.x as f32 / 600 as f32 * dt as f32 * s.mouse_angle_speed);
-            let angle_y = Rad( delta.y as f32 / 800 as f32 * dt as f32 * s.mouse_angle_speed);
-
-            let translation =  Quaternion::from_angle_z( -angle_y )*
-                               Quaternion::from_angle_y( angle_x );
-            s.eye_dir = translation * s.eye_dir;
+            // get the axis to rotate around the x-axis.
+            let axis  = (s.direction - s.position).cross(Vector3::new(0.0, 1.0, 0.0)).normalize();
+            // Rotate around the y axis
+            s.rotate(angle_y, axis.x, axis.y, axis.z);
+            // Rotate around the x axis
+            s.rotate(clamp(angle_x,-1.0,1.0), 0.0, 1.0, 0.0);
         });
         m
     }
 }
+
+fn clamp(input :f32,min:f32,max:f32) -> f32 {
+    if input > max {
+        max
+    } else if input < min {
+        min
+    } else {
+        input
+    }
+}
+
 
 impl Actor for FirstPersonCamera {
     fn start(&mut self, _go: &mut GameObject, world: &mut World) {
@@ -131,26 +146,33 @@ impl Actor for FirstPersonCamera {
 
         self.update_camera();
 
-        // Update Camera
-        {
-            cam.borrow_mut().lookat(
-                &Point3::from_homogeneous(self.eye.extend(1.0)),
-                &Point3::from_homogeneous((self.eye + self.eye_dir * 10.0).extend(1.0)),
-                &Vector3::new(0.0, 1.0, 0.0),
-            );
-        }
     }
 }
 
 impl FirstPersonCamera {
+
+    pub fn rotate(&mut self,angle :f32,  x :f32, y: f32,  z :f32)
+    {
+        let mut temp: Quaternion<f32> = Quaternion::new(0.0,0.0,0.0,0.0);
+        temp.v.x = x * (angle/2.0).sin();
+        temp.v.y = y * (angle/2.0).sin();
+        temp.v.z = z * (angle/2.0).sin();
+        temp.s = (angle/2.0).cos();
+
+        let quat_view  : Quaternion<f32> =  Quaternion::new(0.0,self.direction.x,self.direction.y,self.direction.z);
+        let result  :Quaternion<f32> = (temp * quat_view) * temp.conjugate();
+
+        self.direction = Vector3::new(result.v.x,result.v.y, result.v.z);
+    }
+
     pub fn update_camera(&mut self) {
         let cam = self.camera();
 
         // Update Camera
         {
             cam.borrow_mut().lookat(
-                &Point3::from_homogeneous(self.eye.extend(1.0)),
-                &Point3::from_homogeneous((self.eye + self.eye_dir * 10.0).extend(1.0)),
+                &Point3::from_homogeneous(self.position.extend(1.0)),
+                &Point3::from_homogeneous((self.position + self.direction * 1.0).extend(1.0)),
                 &Vector3::new(0.0, 1.0, 0.0),
             );
         }
