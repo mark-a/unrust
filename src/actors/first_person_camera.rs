@@ -33,7 +33,7 @@ pub struct FirstPersonCamera {
     state: Movement,
     handlers: Vec<(Movement, String, Box<Fn(&mut FirstPersonCamera, f64)>)>,
     mouse_pos:  Vector2<i32>,
-    mouse_angle_speed: f32,
+    mouse_sensitivity: f32,
 
     clicked: bool,
     click_pos:  Vector2<i32>,
@@ -52,7 +52,7 @@ impl Processor for FirstPersonCamera {
             position: Vector3::new(0.0, 0.0, -3.0),
             direction: Vector3::new(0.0, 0.0, 1.0),
             mouse_pos: Vector2::new(0,0),
-            mouse_angle_speed: 1.8,
+            mouse_sensitivity: 0.005,
             clicked: false,
             click_pos: Vector2::new(0,0),
         };
@@ -88,30 +88,26 @@ impl Processor for FirstPersonCamera {
         m.add(Movement::MOUSE, "", move |s, dt| {
 
             let delta = s.mouse_pos - s.click_pos;
-            let pi_div_180 = PI / 180.0;
-            let angle_x :f32=  delta.x as f32 / 600 as f32 * s.mouse_angle_speed;
-            let angle_y :f32=  delta.y as f32 / 800 as f32 * s.mouse_angle_speed;
+            let yaw:f32 =  delta.x as f32  * s.mouse_sensitivity;
+            let mut pitch:f32 =  - delta.y as f32 * s.mouse_sensitivity;
 
-            // get the axis to rotate around the x-axis.
-            let axis  = (s.direction - s.position).cross(Vector3::new(0.0, 1.0, 0.0)).normalize();
-            // Rotate around the y axis
-            s.rotate(angle_y, axis.x, axis.y, axis.z);
-            // Rotate around the x axis
-            s.rotate(clamp(angle_x,-1.0,1.0), 0.0, 1.0, 0.0);
+            if pitch > 89.0 {
+                pitch =  89.0;
+            }
+            if pitch < -89.0{
+                pitch = -89.0;
+            }
+
+            s.direction = Vector3::new(
+                Rad(yaw).cos() * Rad(pitch).cos(),
+                Rad(pitch).sin(),
+                Rad(yaw).sin() * Rad(pitch).cos(),
+            ).normalize();
         });
         m
     }
 }
 
-fn clamp(input :f32,min:f32,max:f32) -> f32 {
-    if input > max {
-        max
-    } else if input < min {
-        min
-    } else {
-        input
-    }
-}
 
 
 impl Actor for FirstPersonCamera {
@@ -150,20 +146,6 @@ impl Actor for FirstPersonCamera {
 }
 
 impl FirstPersonCamera {
-
-    pub fn rotate(&mut self,angle :f32,  x :f32, y: f32,  z :f32)
-    {
-        let mut temp: Quaternion<f32> = Quaternion::new(0.0,0.0,0.0,0.0);
-        temp.v.x = x * (angle/2.0).sin();
-        temp.v.y = y * (angle/2.0).sin();
-        temp.v.z = z * (angle/2.0).sin();
-        temp.s = (angle/2.0).cos();
-
-        let quat_view  : Quaternion<f32> =  Quaternion::new(0.0,self.direction.x,self.direction.y,self.direction.z);
-        let result  :Quaternion<f32> = (temp * quat_view) * temp.conjugate();
-
-        self.direction = Vector3::new(result.v.x,result.v.y, result.v.z);
-    }
 
     pub fn update_camera(&mut self) {
         let cam = self.camera();
