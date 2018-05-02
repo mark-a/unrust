@@ -227,8 +227,8 @@ impl Actor for MainScene {
         imgui::label(
             Native(1.0, 0.0) + Pixel(-8.0, 8.0),
             &format!(
-                "last event: {:?}\nnormal_map = {:?}\nlight animation={:?}\nposition={:?}\ndirection={:?}",
-                self.last_event, normap_map_enabled, self.animate_light, fpc.position,fpc.direction
+                "last event: {:?}\nnormal_map = {:?}\nlight animation={:?}\nposition={:?}\ncamera_yaw={:?}",
+                self.last_event, normap_map_enabled, self.animate_light, fpc.position,fpc.camera_yaw,
             ),
         );
 

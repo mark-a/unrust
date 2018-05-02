@@ -35,6 +35,11 @@ pub struct FirstPersonCamera {
     mouse_pos:  Vector2<i32>,
     mouse_sensitivity: f32,
 
+    camera_pitch: f32,
+    pub camera_yaw : f32,
+    current_pitch: f32,
+    current_yaw : f32,
+
     clicked: bool,
     click_pos:  Vector2<i32>,
 }
@@ -53,6 +58,10 @@ impl Processor for FirstPersonCamera {
             direction: Vector3::new(0.0, 0.0, 1.0),
             mouse_pos: Vector2::new(0,0),
             mouse_sensitivity: 0.005,
+            camera_pitch: 0.0,
+            camera_yaw : - PI ,
+            current_pitch: 0.0,
+            current_yaw : 0.0,
             clicked: false,
             click_pos: Vector2::new(0,0),
         };
@@ -88,21 +97,23 @@ impl Processor for FirstPersonCamera {
         m.add(Movement::MOUSE, "", move |s, dt| {
 
             let delta = s.mouse_pos - s.click_pos;
-            let yaw:f32 = - delta.x as f32  * s.mouse_sensitivity;
-            let mut pitch:f32 =   delta.y as f32 * s.mouse_sensitivity;
+            s.current_yaw = s.camera_yaw + delta.x as f32  * s.mouse_sensitivity;
+            s.current_pitch = s.camera_pitch + delta.y as f32 * s.mouse_sensitivity;
 
-            if pitch > 89.0 {
-                pitch =  89.0;
-            }
-            if pitch < -89.0{
-                pitch = -89.0;
+            if s.current_pitch > (PI / 2.0 - 0.1) {
+                s.current_pitch =  (PI / 2.0  - 0.1);
             }
 
-            s.direction = Vector3::new(
-                Rad(yaw).cos() * Rad(pitch).cos(),
-                Rad(pitch).sin(),
-                Rad(yaw).sin() * Rad(pitch).cos(),
+            if s.current_pitch < -(PI / 2.0 + 0.1){
+                s.current_pitch = -(PI / 2.0 + 0.1);
+            }
+
+            let new_direction = Vector3::new(
+                Rad(s.current_yaw).cos() * Rad(s.current_pitch).cos(),
+                Rad(s.current_pitch).sin(),
+                Rad(s.current_yaw).sin() * Rad(s.current_pitch).cos(),
             ).normalize();
+            s.direction = new_direction;
         });
         m
     }
@@ -193,6 +204,11 @@ impl FirstPersonCamera {
     fn mouse_up(&mut self, input: usize) {
         if input == 0 && self.clicked  {
             self.clicked = false;
+            self.camera_yaw = self.current_yaw;
+            self.camera_pitch = self.current_pitch;
+
+            self.current_yaw =  0.0;
+            self.current_pitch = 0.0;
         }
     }
 
