@@ -219,16 +219,13 @@ impl Actor for MainScene {
             "[WASD ZXEC] : control camera\n[Space] : Toggle light animation\n[U] : Toggle normal map\n[Esc] : reload all (include assets)",
         );
 
-        let fpc_ref = world.find_component::<FirstPersonCamera>().unwrap();
-        let fpc = fpc_ref.borrow_mut();
-
         imgui::pivot((1.0, 0.0));
         imgui::text_align(Right);
         imgui::label(
             Native(1.0, 0.0) + Pixel(-8.0, 8.0),
             &format!(
-                "last event: {:?}\nnormal_map = {:?}\nlight animation={:?}\nposition={:?}\ncamera_yaw={:?}",
-                self.last_event, normap_map_enabled, self.animate_light, fpc.position,fpc.camera_yaw,
+                "last event: {:?}\nnormal_map = {:?}\nlight animation={:?}\n",
+               self.last_event, normap_map_enabled, self.animate_light
             ),
         );
 

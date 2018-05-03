@@ -100,20 +100,6 @@ impl Processor for FirstPersonCamera {
             s.current_yaw = s.camera_yaw + delta.x as f32  * s.mouse_sensitivity;
             s.current_pitch = s.camera_pitch + delta.y as f32 * s.mouse_sensitivity;
 
-            if s.current_pitch > (PI / 2.0 - 0.1) {
-                s.current_pitch =  (PI / 2.0  - 0.1);
-            }
-
-            if s.current_pitch < -(PI / 2.0 + 0.1){
-                s.current_pitch = -(PI / 2.0 + 0.1);
-            }
-
-            let new_direction = Vector3::new(
-                Rad(s.current_yaw).cos() * Rad(s.current_pitch).cos(),
-                Rad(s.current_pitch).sin(),
-                Rad(s.current_yaw).sin() * Rad(s.current_pitch).cos(),
-            ).normalize();
-            s.direction = new_direction;
         });
         m
     }
@@ -159,6 +145,23 @@ impl Actor for FirstPersonCamera {
 impl FirstPersonCamera {
 
     pub fn update_camera(&mut self) {
+
+        if self.current_pitch > (PI / 2.0) - 0.1 {
+            self.current_pitch =  (PI / 2.0)  - 0.1;
+        }
+
+        if self.current_pitch < -(PI / 2.0) + 0.1 {
+            self.current_pitch = -(PI / 2.0) + 0.1;
+        }
+
+        let new_direction = Vector3::new(
+            Rad(self.current_yaw).cos() * Rad(self.current_pitch).cos(),
+            Rad(self.current_pitch).sin(),
+            Rad(self.current_yaw).sin() * Rad(self.current_pitch).cos(),
+        ).normalize();
+        self.direction = new_direction;
+
+
         let cam = self.camera();
 
         // Update Camera
@@ -204,11 +207,9 @@ impl FirstPersonCamera {
     fn mouse_up(&mut self, input: usize) {
         if input == 0 && self.clicked  {
             self.clicked = false;
+            self.click_pos = self.mouse_pos.clone();
             self.camera_yaw = self.current_yaw;
             self.camera_pitch = self.current_pitch;
-
-            self.current_yaw =  0.0;
-            self.current_pitch = 0.0;
         }
     }
 
