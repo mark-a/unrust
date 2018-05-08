@@ -98,7 +98,7 @@ impl Processor for FirstPersonCamera {
 
             let delta = s.mouse_pos - s.click_pos;
             s.current_yaw = s.camera_yaw + delta.x as f32  * s.mouse_sensitivity;
-            s.current_pitch = s.camera_pitch + delta.y as f32 * s.mouse_sensitivity;
+            s.current_pitch = s.camera_pitch - delta.y as f32 * s.mouse_sensitivity;
 
         });
         m
