@@ -93,7 +93,7 @@ fn translate_event(e: glutin::Event) -> Option<AppEvent> {
                     ElementState::Released => Some(AppEvent::MouseUp(event)),
                 }
             }
-            WindowEvent::CursorMoved { position, .. } => Some(AppEvent::MousePos(position)),
+            WindowEvent::CursorMoved { position, .. } => Some(AppEvent::MousePos((position.0 as i32,position.1 as i32))),
             WindowEvent::KeyboardInput { input, .. } => match input.state {
                 ElementState::Pressed => Some(AppEvent::KeyDown(events::KeyDownEvent {
                     key: get_virtual_key(input),
