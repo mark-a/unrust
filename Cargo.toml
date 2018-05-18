@@ -41,3 +41,8 @@ features = ["png_codec", "tga"]
 [features]
 default = []
 flame_it = ["flame", "flamer"]
+
+[profile.release]
+debug = false
+lto = true
+opt-level = 's'
